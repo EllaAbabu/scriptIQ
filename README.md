@@ -29,6 +29,8 @@ js/parser.js        PDF (PDF.js), DOCX (JSZip + XML), TXT extraction
 js/similarity.js    TF-IDF + cosine scoring, shared n-gram matching
 js/diff.js          word-level LCS diff (equal / added / removed / rewritten)
 js/graph.js         D3 force-directed similarity network for batches
+js/semantic.js      in-browser sentence embeddings (transformers.js MiniLM)
+js/storage.js       IndexedDB persistence (submissions + comparison history)
 js/app.js           upload UI, document registry, comparison view
 samples/            demo documents
 ```
@@ -42,7 +44,7 @@ diffing, graphing, and storage can be developed independently.
 - [x] **Phase 2** — TF-IDF + cosine similarity, highlighted matches
 - [x] **Phase 3** — LCS side-by-side diff view
 - [x] **Phase 4** — D3.js similarity network graph for batches
-- [ ] **Phase 5** — semantic (embedding) similarity layer + IndexedDB history
+- [x] **Phase 5** — semantic (embedding) similarity layer + IndexedDB history
 - [ ] **Phase 6** — edge cases, polish, demo walkthrough
 
 ## Dependencies (CDN, no install)
@@ -52,3 +54,12 @@ diffing, graphing, and storage can be developed independently.
 | PDF.js 3.11 | PDF text extraction |
 | JSZip 3.10 | unzipping `.docx` containers |
 | D3.js 7.8 | force-directed similarity network graph |
+| transformers.js 2.17 | optional in-browser semantic embeddings (MiniLM, ~25 MB model fetched on opt-in) |
+
+## The AI layer
+
+There is no backend and no API key anywhere. "Enable AI semantic analysis"
+downloads a MiniLM sentence-embedding model once (cached by the browser) and
+runs it locally via transformers.js. It scores *meaning*, so heavy paraphrase
+that TF-IDF underrates still registers. If the model can't load, everything
+else keeps working TF-IDF-only.

@@ -80,12 +80,25 @@
         <button id="compare-btn" class="btn btn-primary" type="button">Compare</button>
       </div>
 
+      <div class="ai-strip">
+        <button id="ai-enable" class="btn" type="button">Enable AI semantic analysis</button>
+        <span id="ai-status" class="muted">
+          Optional — downloads a ~25 MB language model once, then runs fully in your
+          browser. Catches paraphrasing that word-matching misses.
+        </span>
+      </div>
+
       <div id="compare-results" hidden>
         <div class="score-row">
           <div class="score-card">
             <div class="score-value" id="score-value">—</div>
             <div class="score-label" id="score-label"></div>
             <div class="score-sub">TF-IDF cosine similarity</div>
+          </div>
+          <div class="score-card">
+            <div class="score-value" id="semantic-value">—</div>
+            <div class="score-label" id="semantic-label">AI semantic similarity</div>
+            <div class="score-sub" id="semantic-sub">enable AI to compute</div>
           </div>
           <div class="score-meta">
             <p id="coverage-a"></p>
@@ -140,6 +153,28 @@
         </div>
       </div>
     </section>
+
+    <!-- Comparison history -->
+    <section class="panel" id="history-panel" hidden>
+      <div class="panel-heading-row">
+        <h2>5 · Comparison history</h2>
+        <button id="clear-history" class="btn btn-ghost" type="button">Clear history</button>
+      </div>
+      <div class="table-wrap">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>When</th>
+              <th>Pair</th>
+              <th>TF-IDF</th>
+              <th>Semantic</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="history-body"></tbody>
+        </table>
+      </div>
+    </section>
   </main>
 
   <footer class="app-footer">
@@ -151,6 +186,8 @@
   <script src="js/similarity.js"></script>
   <script src="js/diff.js"></script>
   <script src="js/graph.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/semantic.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
