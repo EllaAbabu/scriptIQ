@@ -29,6 +29,12 @@ ScriptIQ.documents = new Map();
   const viewDiff = document.getElementById("view-diff");
   const viewToggle = document.querySelector(".view-toggle");
 
+  const graphPanel = document.getElementById("graph-panel");
+  const graphSvg = document.getElementById("graph-svg");
+  const graphInfo = document.getElementById("graph-info");
+  const thresholdSlider = document.getElementById("threshold-slider");
+  const thresholdValue = document.getElementById("threshold-value");
+
   /** The pair currently on screen; diff is computed lazily per pair. */
   let currentPair = null; // { idA, idB, diffRendered }
 
@@ -69,8 +75,15 @@ ScriptIQ.documents = new Map();
     documentsPanel.hidden = true;
     comparePanel.hidden = true;
     compareResults.hidden = true;
+    graphPanel.hidden = true;
     currentPair = null;
     setStatus("");
+  });
+
+  thresholdSlider.addEventListener("input", () => {
+    thresholdValue.textContent = thresholdSlider.value + "%";
+    const visible = ScriptIQ.graph.applyThreshold(thresholdSlider.value / 100);
+    updateGraphInfo(visible);
   });
 
   compareBtn.addEventListener("click", () => {
@@ -81,11 +94,16 @@ ScriptIQ.documents = new Map();
 
   viewToggle.addEventListener("click", (e) => {
     const btn = e.target.closest(".tab");
-    if (!btn) return;
-    viewToggle.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
-    btn.classList.add("active");
+    if (btn) setActiveView(btn.dataset.view);
+  });
 
-    const showDiff = btn.dataset.view === "diff";
+  /** Switch between the shared-passages and diff views ("matches"/"diff"). */
+  function setActiveView(view) {
+    viewToggle
+      .querySelectorAll(".tab")
+      .forEach((t) => t.classList.toggle("active", t.dataset.view === view));
+
+    const showDiff = view === "diff";
     viewMatches.hidden = showDiff;
     viewDiff.hidden = !showDiff;
 
@@ -97,7 +115,7 @@ ScriptIQ.documents = new Map();
       );
       currentPair.diffRendered = true;
     }
-  });
+  }
 
   // ---------- processing ----------
 
@@ -131,11 +149,65 @@ ScriptIQ.documents = new Map();
 
     const ok = ScriptIQ.documents.size;
     setStatus(
-      ok >= 2
-        ? `${ok} documents ready — pick a pair below to compare.`
-        : `${ok} document ready. Upload at least one more to compare.`
+      ok >= 3
+        ? `${ok} documents ready — see the batch overview below.`
+        : ok === 2
+          ? "2 documents ready — pick a pair below to compare."
+          : `${ok} document ready. Upload at least one more to compare.`
     );
     refreshComparePanel();
+    refreshGraph();
+  }
+
+  // ---------- batch graph (Phase 4) ----------
+
+  /** Rebuild the network graph from the current document set (3+ docs). */
+  function refreshGraph() {
+    const docs = [...ScriptIQ.documents.values()];
+    if (docs.length < 3) {
+      graphPanel.hidden = true;
+      return;
+    }
+    graphPanel.hidden = false;
+
+    // Score every pair once; the graph handles thresholding/display.
+    const vectors = ScriptIQ.similarity.buildVectors(
+      docs.map((d) => d.filteredTokens)
+    );
+    const links = [];
+    for (let i = 0; i < docs.length; i++) {
+      for (let j = i + 1; j < docs.length; j++) {
+        links.push({
+          source: docs[i].id,
+          target: docs[j].id,
+          score: ScriptIQ.similarity.cosine(vectors[i], vectors[j]),
+        });
+      }
+    }
+
+    const visible = ScriptIQ.graph.render({
+      svg: graphSvg,
+      nodes: docs.map((d) => ({ id: d.id, name: d.name })),
+      links,
+      threshold: thresholdSlider.value / 100,
+      onEdgeClick: (idA, idB) => {
+        selectA.value = idA;
+        selectB.value = idB;
+        comparePair(idA, idB);
+        setActiveView("diff");
+        comparePanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      },
+    });
+    updateGraphInfo(visible);
+  }
+
+  function updateGraphInfo(visibleEdges) {
+    const n = ScriptIQ.documents.size;
+    const pairs = (n * (n - 1)) / 2;
+    graphInfo.textContent =
+      visibleEdges === 0
+        ? `No pairs at or above ${thresholdSlider.value}% similarity (${pairs} pairs checked). Lower the threshold to see weaker links.`
+        : `${visibleEdges} of ${pairs} pairs at or above ${thresholdSlider.value}% similarity.`;
   }
 
   // ---------- comparison (Phase 2) ----------
