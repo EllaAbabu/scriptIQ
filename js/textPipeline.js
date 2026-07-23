@@ -78,6 +78,26 @@ ScriptIQ.pipeline = (function () {
   }
 
   /**
+   * Tokenize the RAW text (not the normalized copy), remembering where each
+   * token sits in the original string. The match highlighter needs these
+   * offsets to wrap the exact characters the lecturer sees on screen.
+   * Each entry: { norm, start, end } — `norm` is the comparison form.
+   */
+  function tokenizeWithOffsets(rawText) {
+    const re = /[\p{L}\p{N}]+(?:['’ʼ][\p{L}]+)*/gu;
+    const out = [];
+    let m;
+    while ((m = re.exec(rawText)) !== null) {
+      out.push({
+        norm: m[0].normalize("NFC").replace(/[‘’ʼ]/g, "'").toLowerCase(),
+        start: m.index,
+        end: m.index + m[0].length,
+      });
+    }
+    return out;
+  }
+
+  /**
    * Run the full pipeline on raw extracted text.
    * Returns everything downstream phases need:
    *   raw            — untouched extraction output (shown to the lecturer)
@@ -94,6 +114,7 @@ ScriptIQ.pipeline = (function () {
       normalized,
       tokens,
       filteredTokens,
+      offsetTokens: tokenizeWithOffsets(rawText),
       stats: {
         characters: rawText.length,
         words: tokens.length,
@@ -103,5 +124,12 @@ ScriptIQ.pipeline = (function () {
     };
   }
 
-  return { normalize, tokenize, stripStopwords, process, STOPWORDS };
+  return {
+    normalize,
+    tokenize,
+    stripStopwords,
+    tokenizeWithOffsets,
+    process,
+    STOPWORDS,
+  };
 })();

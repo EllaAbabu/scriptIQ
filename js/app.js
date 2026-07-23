@@ -20,6 +20,12 @@ ScriptIQ.documents = new Map();
   const documentList = document.getElementById("document-list");
   const clearAllBtn = document.getElementById("clear-all");
 
+  const comparePanel = document.getElementById("compare-panel");
+  const selectA = document.getElementById("select-a");
+  const selectB = document.getElementById("select-b");
+  const compareBtn = document.getElementById("compare-btn");
+  const compareResults = document.getElementById("compare-results");
+
   let nextId = 1;
 
   // ---------- upload wiring ----------
@@ -55,7 +61,15 @@ ScriptIQ.documents = new Map();
     ScriptIQ.documents.clear();
     documentList.innerHTML = "";
     documentsPanel.hidden = true;
+    comparePanel.hidden = true;
+    compareResults.hidden = true;
     setStatus("");
+  });
+
+  compareBtn.addEventListener("click", () => {
+    if (selectA.value && selectB.value) {
+      comparePair(selectA.value, selectB.value);
+    }
   });
 
   // ---------- processing ----------
@@ -91,9 +105,113 @@ ScriptIQ.documents = new Map();
     const ok = ScriptIQ.documents.size;
     setStatus(
       ok >= 2
-        ? `${ok} documents ready — similarity scoring arrives in Phase 2.`
+        ? `${ok} documents ready — pick a pair below to compare.`
         : `${ok} document ready. Upload at least one more to compare.`
     );
+    refreshComparePanel();
+  }
+
+  // ---------- comparison (Phase 2) ----------
+
+  /** Show the compare panel and (re)fill the pair selectors. */
+  function refreshComparePanel() {
+    const docs = [...ScriptIQ.documents.values()];
+    if (docs.length < 2) {
+      comparePanel.hidden = true;
+      return;
+    }
+    comparePanel.hidden = false;
+
+    const fill = (select, selectedId) => {
+      select.innerHTML = "";
+      for (const doc of docs) {
+        const opt = document.createElement("option");
+        opt.value = doc.id;
+        opt.textContent = doc.name;
+        select.appendChild(opt);
+      }
+      if (selectedId && ScriptIQ.documents.has(selectedId)) {
+        select.value = selectedId;
+      }
+    };
+    fill(selectA, selectA.value || docs[0].id);
+    fill(selectB, selectB.value || docs[1].id);
+    if (selectA.value === selectB.value) selectB.value = docs[docs.length - 1].id;
+
+    // With exactly two documents the pair is unambiguous — compare it now.
+    if (docs.length === 2) comparePair(docs[0].id, docs[1].id);
+  }
+
+  /** Score a pair and render highlighted matches side by side. */
+  function comparePair(idA, idB) {
+    const docA = ScriptIQ.documents.get(idA);
+    const docB = ScriptIQ.documents.get(idB);
+    if (!docA || !docB) return;
+
+    if (idA === idB) {
+      setStatus("Pick two different documents to compare.");
+      return;
+    }
+
+    // IDF over the whole uploaded corpus, not just the pair — common terms
+    // across many submissions get down-weighted accordingly.
+    const docs = [...ScriptIQ.documents.values()];
+    const vectors = ScriptIQ.similarity.buildVectors(
+      docs.map((d) => d.filteredTokens)
+    );
+    const vecOf = new Map(docs.map((d, i) => [d.id, vectors[i]]));
+    const score = ScriptIQ.similarity.cosine(vecOf.get(idA), vecOf.get(idB));
+
+    const matches = ScriptIQ.similarity.findMatches(
+      docA.offsetTokens,
+      docB.offsetTokens
+    );
+
+    renderComparison(docA, docB, score, matches);
+  }
+
+  function renderComparison(docA, docB, score, matches) {
+    compareResults.hidden = false;
+
+    const pct = Math.round(score * 100);
+    const scoreValue = document.getElementById("score-value");
+    const scoreLabel = document.getElementById("score-label");
+    scoreValue.textContent = pct + "%";
+
+    let level, label;
+    if (pct >= 60) { level = "high"; label = "High similarity — review closely"; }
+    else if (pct >= 30) { level = "moderate"; label = "Moderate similarity"; }
+    else { level = "low"; label = "Low similarity"; }
+    scoreValue.className = "score-value score-" + level;
+    scoreLabel.textContent = label;
+
+    document.getElementById("coverage-a").textContent =
+      `${docA.name}: ${Math.round(matches.coverageA * 100)}% of words inside shared passages`;
+    document.getElementById("coverage-b").textContent =
+      `${docB.name}: ${Math.round(matches.coverageB * 100)}% of words inside shared passages`;
+
+    document.getElementById("pane-title-a").textContent = docA.name;
+    document.getElementById("pane-title-b").textContent = docB.name;
+    document.getElementById("pane-text-a").innerHTML =
+      highlightedHtml(docA.raw, matches.spansA);
+    document.getElementById("pane-text-b").innerHTML =
+      highlightedHtml(docB.raw, matches.spansB);
+
+    compareResults.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  /** Raw text → HTML with <mark> wrappers around matched character spans. */
+  function highlightedHtml(raw, spans) {
+    let html = "";
+    let pos = 0;
+    for (const span of spans) {
+      html += escapeHtml(raw.slice(pos, span.start));
+      html += `<mark class="hl-${span.strength}">` +
+        escapeHtml(raw.slice(span.start, span.end)) + "</mark>";
+      pos = span.end;
+    }
+    html += escapeHtml(raw.slice(pos));
+    return html;
   }
 
   // ---------- rendering ----------

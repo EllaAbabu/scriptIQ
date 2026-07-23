@@ -272,6 +272,122 @@ body {
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ---------- comparison (Phase 2) ---------- */
+
+.compare-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.compare-controls select {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  max-width: 260px;
+}
+
+.vs {
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.btn-primary:hover { filter: brightness(1.1); }
+
+#compare-results { margin-top: 1.25rem; }
+
+.score-row {
+  display: flex;
+  gap: 1.25rem;
+  align-items: stretch;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.score-card {
+  min-width: 180px;
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.9rem 1.4rem;
+  background: var(--bg);
+}
+
+.score-value { font-size: 2.4rem; font-weight: 700; line-height: 1.1; }
+.score-low      { color: var(--accent); }
+.score-moderate { color: #b07a1f; }
+.score-high     { color: var(--danger); }
+
+.score-label { font-weight: 600; font-size: 0.9rem; }
+.score-sub { color: var(--muted); font-size: 0.75rem; margin-top: 0.2rem; }
+
+.score-meta {
+  flex: 1;
+  min-width: 260px;
+  font-size: 0.88rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.15rem;
+}
+
+.score-meta p { margin: 0; }
+
+.legend {
+  display: flex;
+  gap: 0.9rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+  font-size: 0.78rem;
+}
+
+/* match highlight strengths (shared with legend chips) */
+mark.hl-weak   { background: #fdf3c9; border-radius: 3px; padding: 0 1px; }
+mark.hl-medium { background: #fddfa9; border-radius: 3px; padding: 0 1px; }
+mark.hl-strong { background: #f8c0ba; border-radius: 3px; padding: 0 1px; }
+
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 800px) {
+  .compare-grid { grid-template-columns: 1fr; }
+}
+
+.compare-pane h3 {
+  margin: 0 0 0.4rem;
+  font-size: 0.88rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compare-text {
+  max-height: 480px;
+  overflow: auto;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.85rem;
+  font-size: 0.86rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 /* ---------- footer ---------- */
 
 .app-footer {

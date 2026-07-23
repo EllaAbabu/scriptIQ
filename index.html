@@ -49,6 +49,48 @@
       </div>
       <div id="document-list" class="document-grid"></div>
     </section>
+
+    <!-- Pair comparison -->
+    <section class="panel" id="compare-panel" hidden>
+      <h2>3 · Compare a pair</h2>
+      <div class="compare-controls">
+        <select id="select-a" aria-label="First document"></select>
+        <span class="vs">vs</span>
+        <select id="select-b" aria-label="Second document"></select>
+        <button id="compare-btn" class="btn btn-primary" type="button">Compare</button>
+      </div>
+
+      <div id="compare-results" hidden>
+        <div class="score-row">
+          <div class="score-card">
+            <div class="score-value" id="score-value">—</div>
+            <div class="score-label" id="score-label"></div>
+            <div class="score-sub">TF-IDF cosine similarity</div>
+          </div>
+          <div class="score-meta">
+            <p id="coverage-a"></p>
+            <p id="coverage-b"></p>
+            <div class="legend">
+              <span><mark class="hl-weak">3–4 words</mark></span>
+              <span><mark class="hl-medium">5–7 words</mark></span>
+              <span><mark class="hl-strong">8+ words</mark></span>
+              <span class="muted">shared word runs, by length</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="compare-grid">
+          <div class="compare-pane">
+            <h3 id="pane-title-a"></h3>
+            <div class="compare-text" id="pane-text-a"></div>
+          </div>
+          <div class="compare-pane">
+            <h3 id="pane-title-b"></h3>
+            <div class="compare-text" id="pane-text-b"></div>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <footer class="app-footer">
@@ -57,6 +99,7 @@
 
   <script src="js/textPipeline.js"></script>
   <script src="js/parser.js"></script>
+  <script src="js/similarity.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
