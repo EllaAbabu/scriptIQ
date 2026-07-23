@@ -15,9 +15,33 @@ No build step. Either:
 browsers restrict on `file://` URLs; it still works there via a slower
 main-thread fallback.)
 
-Try it with the files in `samples/`: upload all four to see the batch graph —
-three form a copying cluster (paraphrase + partial copy of the original) and
-one is unrelated.
+## Demo walkthrough
+
+Upload all four files in `samples/` at once, then:
+
+1. **Batch overview** — a graph appears. Three essays cluster together (the
+   original, a paraphrase of it, and a partial copy); the cocoa-farming essay
+   sits apart. Drag the threshold slider to see weaker links appear.
+2. **Click the thickest red edge** — it jumps straight into that pair's diff.
+3. **Text diff tab** — amber blocks show passages rewritten in place; that's
+   the paraphrasing.
+4. **Shared passages tab** — the TF-IDF score plus verbatim runs highlighted
+   by length (yellow 3–4 words, amber 5–7, red 8+).
+5. **Enable AI semantic analysis** — downloads the model once, then scores
+   meaning rather than wording. The paraphrase pair scores much higher here
+   than TF-IDF alone suggests.
+6. **Reload the page** — documents, graph, and comparison history all come
+   back from IndexedDB.
+
+## Tests
+
+```
+node tests/run-tests.js
+```
+
+Covers the algorithms directly (no browser needed): identical and empty
+documents, non-English text, span/offset invariants, diff completeness, and a
+60-submission batch.
 
 ## Project structure
 
@@ -45,7 +69,7 @@ diffing, graphing, and storage can be developed independently.
 - [x] **Phase 3** — LCS side-by-side diff view
 - [x] **Phase 4** — D3.js similarity network graph for batches
 - [x] **Phase 5** — semantic (embedding) similarity layer + IndexedDB history
-- [ ] **Phase 6** — edge cases, polish, demo walkthrough
+- [x] **Phase 6** — edge cases, polish, demo walkthrough
 
 ## Dependencies (CDN, no install)
 

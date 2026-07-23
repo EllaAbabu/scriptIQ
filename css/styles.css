@@ -142,6 +142,8 @@ body {
   min-height: 1.2em;
 }
 
+.upload-status.status-error { color: var(--danger); }
+
 /* ---------- document cards ---------- */
 
 .document-grid {

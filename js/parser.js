@@ -40,7 +40,18 @@ ScriptIQ.parser = (function () {
     if (!window.pdfjsLib) {
       throw new Error("PDF.js failed to load — check your internet connection (it is served from a CDN).");
     }
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let pdf;
+    try {
+      pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    } catch (err) {
+      if (err && err.name === "PasswordException") {
+        throw new Error("This PDF is password-protected — remove the password and re-upload it.");
+      }
+      if (err && err.name === "InvalidPDFException") {
+        throw new Error("This file is corrupt or is not actually a PDF.");
+      }
+      throw err;
+    }
     const pages = [];
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
@@ -61,7 +72,14 @@ ScriptIQ.parser = (function () {
     if (!window.JSZip) {
       throw new Error("JSZip failed to load — check your internet connection (it is served from a CDN).");
     }
-    const zip = await JSZip.loadAsync(arrayBuffer);
+    let zip;
+    try {
+      zip = await JSZip.loadAsync(arrayBuffer);
+    } catch {
+      throw new Error(
+        "This file is corrupt or is not a real .docx (older .doc files are not supported — re-save as .docx)."
+      );
+    }
     const docEntry = zip.file("word/document.xml");
     if (!docEntry) {
       throw new Error("Not a valid .docx file (missing word/document.xml).");
