@@ -15,6 +15,22 @@ No build step. Either:
 browsers restrict on `file://` URLs; it still works there via a slower
 main-thread fallback.)
 
+## Batch uploads
+
+Upload files individually, or drop in a **`.zip` of a whole class** — the same
+JSZip already used for `.docx` expands it. Nested folders are fine; macOS and
+Windows archive noise (`__MACOSX/`, `.DS_Store`, `Thumbs.db`, dotfiles) is
+ignored, and non-document members are reported rather than failing the batch.
+Limits: 300 documents and 250 MB uncompressed per archive.
+
+Above five documents the extracted-text panel switches to a compact roster —
+one scrollable row per submission with its word counts, each text collapsed
+behind a toggle. Two files still show their text inline as before.
+
+`samples/class-batch.zip` is a 50-submission demo archive (regenerate with
+`python3 tests/make-class-batch.py`). Three essays are a copying cluster and
+score 73% / 66% / 54%; the next-highest pair is 30% and the median is 16%.
+
 ## Demo walkthrough
 
 Upload all four files in `samples/` at once, then:
@@ -36,12 +52,19 @@ Upload all four files in `samples/` at once, then:
 ## Tests
 
 ```
-node tests/run-tests.js
+node tests/run-tests.js                      # algorithms — no dependencies
+npm install jszip && node tests/test-archive.js   # ZIP batch upload
 ```
 
-Covers the algorithms directly (no browser needed): identical and empty
-documents, non-English text, span/offset invariants, diff completeness, and a
+`run-tests.js` covers the algorithms directly: identical and empty documents,
+non-English text, span/offset invariants, diff completeness, and a
 60-submission batch.
+
+`test-archive.js` expands the real `samples/class-batch.zip` with the real
+JSZip and checks noise filtering, nested paths, corrupt and document-free
+archives, then extracts and scores all 50 submissions to confirm the planted
+copying cluster ranks top. It needs JSZip locally (dev-only — the app itself
+still loads it from a CDN and has no build step) and skips cleanly without it.
 
 ## Project structure
 

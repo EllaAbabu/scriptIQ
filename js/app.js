@@ -174,29 +174,53 @@ ScriptIQ.documents = new Map();
 
     documentsPanel.hidden = false;
 
-    for (let f = 0; f < files.length; f++) {
-      const file = files[f];
-      if (files.length > 1) {
-        setStatus(`Processing ${f + 1} of ${files.length}: ${file.name}…`);
+    // Step 1: expand any ZIPs so a whole class arrives as one upload.
+    // Everything downstream sees a flat list of entries and no longer
+    // cares whether they came loose or out of an archive.
+    setStatus("Reading files…");
+    const entries = [];
+    const skipped = [];
+    for (const file of files) {
+      try {
+        const expanded = await ScriptIQ.parser.expand(file);
+        entries.push(...expanded.entries);
+        skipped.push(...expanded.skipped);
+      } catch (err) {
+        // A bad archive gets its own error card rather than aborting the
+        // whole upload.
+        const card = renderCard("pending-" + nextId++, file.name, formatSize(file.size));
+        documentList.appendChild(card);
+        renderCardError(card, err.message);
       }
-      const card = renderCard("pending-" + nextId++, file.name, formatSize(file.size));
+    }
+
+    // Step 2: parse each entry.
+    for (let f = 0; f < entries.length; f++) {
+      const entry = entries[f];
+      if (entries.length > 1) {
+        setStatus(`Extracting text — ${f + 1} of ${entries.length}: ${entry.name}…`);
+        // Yield to the browser so the status line and cards repaint
+        // mid-batch instead of freezing until the last file lands.
+        await new Promise((r) => setTimeout(r, 0));
+      }
+      const card = renderCard("pending-" + nextId++, entry.name, formatSize(entry.size));
       documentList.appendChild(card);
 
       try {
-        const rawText = await ScriptIQ.parser.extractText(file);
+        const rawText = await ScriptIQ.parser.extractText(entry);
 
         // Content-hash id: stable across reloads (drives IndexedDB
         // persistence and the embedding cache) and makes re-uploading
         // the same file an update, not a duplicate.
-        const id = await contentHash(file.name + "\u0000" + rawText);
+        const id = await contentHash(entry.name + "\u0000" + rawText);
         const existing = ScriptIQ.documents.get(id);
         if (existing && existing.cardEl) existing.cardEl.remove();
 
         const processed = ScriptIQ.pipeline.process(rawText);
         const doc = {
           id,
-          name: file.name,
-          size: file.size,
+          name: entry.name,
+          size: entry.size,
           uploadedAt: new Date(),
           cardEl: card,
           ...processed,
@@ -223,17 +247,46 @@ ScriptIQ.documents = new Map();
     }
 
     const ok = ScriptIQ.documents.size;
+    const ignored = skipped.length
+      ? ` ${skipped.length} non-document file(s) in the archive were ignored.`
+      : "";
     setStatus(
-      ok >= 3
+      (ok >= 3
         ? `${ok} documents ready — see the batch overview below.`
         : ok === 2
           ? "2 documents ready — pick a pair below to compare."
           : ok === 1
             ? "1 document ready. Upload at least one more to compare."
-            : "No readable documents yet — see the errors above."
+            : "No readable documents yet — see the errors above.") + ignored
     );
+    if (skipped.length) {
+      console.info("ScriptIQ: ignored non-document archive entries:", skipped);
+    }
+    applyDensity();
     refreshComparePanel();
     refreshGraph();
+  }
+
+  /**
+   * Keep the extracted-text panel readable as the batch grows.
+   *
+   * With a couple of documents the lecturer wants to see the text — it is
+   * how they confirm extraction worked. With fifty, that same layout is
+   * an unusable wall: the panel becomes a compact one-per-row roster and
+   * each text collapses behind its own disclosure toggle.
+   */
+  const DENSE_THRESHOLD = 5;
+
+  function applyDensity() {
+    const dense = documentList.children.length > DENSE_THRESHOLD;
+    documentList.classList.toggle("dense", dense);
+    // Close every preview when switching into dense mode so a big batch
+    // never renders fifty text blocks at once; leave them alone otherwise.
+    if (dense) {
+      documentList
+        .querySelectorAll("details.doc-preview[open]")
+        .forEach((d) => (d.open = false));
+    }
   }
 
   // ---------- batch graph (Phase 4) ----------
@@ -660,17 +713,24 @@ ScriptIQ.documents = new Map();
   function renderCardResult(card, processed) {
     const { stats } = processed;
     const body = card.querySelector(".doc-body");
+    // The text sits inside <details> so a fifty-file batch renders fifty
+    // one-line summaries instead of fifty walls of text. Browsers don't
+    // lay out collapsed <details> content, so this is a real saving, not
+    // just visual. Small batches open by default (see applyDensity).
     body.innerHTML = `
       <ul class="doc-stats">
         <li><strong>${stats.words.toLocaleString()}</strong> words</li>
         <li><strong>${stats.meaningfulWords.toLocaleString()}</strong> after stopwords</li>
         <li><strong>${stats.uniqueWords.toLocaleString()}</strong> unique terms</li>
       </ul>
-      <div class="doc-tabs" role="tablist">
-        <button class="tab active" data-view="raw" type="button">Extracted text</button>
-        <button class="tab" data-view="processed" type="button">Processed tokens</button>
-      </div>
-      <pre class="doc-text" data-current="raw"></pre>`;
+      <details class="doc-preview" open>
+        <summary>Extracted text</summary>
+        <div class="doc-tabs" role="tablist">
+          <button class="tab active" data-view="raw" type="button">Extracted text</button>
+          <button class="tab" data-view="processed" type="button">Processed tokens</button>
+        </div>
+        <pre class="doc-text" data-current="raw"></pre>
+      </details>`;
 
     // Card previews are capped — a 200-page thesis shouldn't put megabytes
     // into the DOM. Comparison and diff views always use the full text.
@@ -802,6 +862,7 @@ ScriptIQ.documents = new Map();
       setStatus(
         `Restored ${subs.length} submission${subs.length === 1 ? "" : "s"} from your last session.`
       );
+      applyDensity();
       refreshComparePanel();
       refreshGraph();
     }
