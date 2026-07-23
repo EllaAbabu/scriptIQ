@@ -358,6 +358,34 @@ mark.hl-weak   { background: #fdf3c9; border-radius: 3px; padding: 0 1px; }
 mark.hl-medium { background: #fddfa9; border-radius: 3px; padding: 0 1px; }
 mark.hl-strong { background: #f8c0ba; border-radius: 3px; padding: 0 1px; }
 
+/* view toggle between shared-passages and diff */
+.view-toggle {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.9rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.6rem;
+}
+
+/* diff highlight colors: green = additions, red = deletions, amber = rewritten */
+mark.df-del {
+  background: #fbd9d5;
+  text-decoration: line-through;
+  text-decoration-color: rgba(179, 55, 47, 0.55);
+  border-radius: 3px;
+  padding: 0 1px;
+}
+mark.df-ins { background: #d3ecdb; border-radius: 3px; padding: 0 1px; }
+mark.df-mod { background: #fce8bd; border-radius: 3px; padding: 0 1px; }
+
+.diff-meta { margin-bottom: 0.9rem; }
+.diff-summary {
+  margin: 0 0 0.4rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+.diff-meta .legend { margin-top: 0; }
+
 .compare-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

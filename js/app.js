@@ -25,6 +25,12 @@ ScriptIQ.documents = new Map();
   const selectB = document.getElementById("select-b");
   const compareBtn = document.getElementById("compare-btn");
   const compareResults = document.getElementById("compare-results");
+  const viewMatches = document.getElementById("view-matches");
+  const viewDiff = document.getElementById("view-diff");
+  const viewToggle = document.querySelector(".view-toggle");
+
+  /** The pair currently on screen; diff is computed lazily per pair. */
+  let currentPair = null; // { idA, idB, diffRendered }
 
   let nextId = 1;
 
@@ -63,12 +69,33 @@ ScriptIQ.documents = new Map();
     documentsPanel.hidden = true;
     comparePanel.hidden = true;
     compareResults.hidden = true;
+    currentPair = null;
     setStatus("");
   });
 
   compareBtn.addEventListener("click", () => {
     if (selectA.value && selectB.value) {
       comparePair(selectA.value, selectB.value);
+    }
+  });
+
+  viewToggle.addEventListener("click", (e) => {
+    const btn = e.target.closest(".tab");
+    if (!btn) return;
+    viewToggle.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
+    btn.classList.add("active");
+
+    const showDiff = btn.dataset.view === "diff";
+    viewMatches.hidden = showDiff;
+    viewDiff.hidden = !showDiff;
+
+    // Compute the LCS diff only when first asked for, then keep it.
+    if (showDiff && currentPair && !currentPair.diffRendered) {
+      renderDiff(
+        ScriptIQ.documents.get(currentPair.idA),
+        ScriptIQ.documents.get(currentPair.idB)
+      );
+      currentPair.diffRendered = true;
     }
   });
 
@@ -167,7 +194,15 @@ ScriptIQ.documents = new Map();
       docB.offsetTokens
     );
 
+    currentPair = { idA, idB, diffRendered: false };
     renderComparison(docA, docB, score, matches);
+
+    // If the lecturer is sitting on the diff tab, refresh it for the new
+    // pair right away instead of leaving the old diff on screen.
+    if (!viewDiff.hidden) {
+      renderDiff(docA, docB);
+      currentPair.diffRendered = true;
+    }
   }
 
   function renderComparison(docA, docB, score, matches) {
@@ -198,6 +233,60 @@ ScriptIQ.documents = new Map();
       highlightedHtml(docB.raw, matches.spansB);
 
     compareResults.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  // ---------- diff view (Phase 3) ----------
+
+  function renderDiff(docA, docB) {
+    const { ops, stats } = ScriptIQ.diff.diffTokens(
+      docA.offsetTokens,
+      docB.offsetTokens
+    );
+
+    document.getElementById("diff-summary").textContent =
+      `${stats.equal.toLocaleString()} words unchanged · ` +
+      `${stats.del.toLocaleString()} only in left · ` +
+      `${stats.ins.toLocaleString()} only in right · ` +
+      `${stats.modA.toLocaleString()} → ${stats.modB.toLocaleString()} words rewritten`;
+
+    document.getElementById("diff-title-a").textContent = docA.name;
+    document.getElementById("diff-title-b").textContent = docB.name;
+    document.getElementById("diff-text-a").innerHTML =
+      diffSideHtml(docA, ops, "a");
+    document.getElementById("diff-text-b").innerHTML =
+      diffSideHtml(docB, ops, "b");
+  }
+
+  /**
+   * Render one side of the diff. Each op's token range maps back to a
+   * character range in that document's raw text; the text between ops
+   * (whitespace/punctuation) is rendered unstyled.
+   */
+  function diffSideHtml(doc, ops, side) {
+    const tokens = doc.offsetTokens;
+    const raw = doc.raw;
+    let html = "";
+    let pos = 0;
+
+    for (const op of ops) {
+      const startIdx = side === "a" ? op.aStart : op.bStart;
+      const endIdx = side === "a" ? op.aEnd : op.bEnd;
+      if (endIdx <= startIdx) continue; // op has no text on this side
+
+      let cls = null;
+      if (op.type === "del") cls = "df-del";
+      else if (op.type === "ins") cls = "df-ins";
+      else if (op.type === "mod") cls = "df-mod";
+
+      const from = tokens[startIdx].start;
+      const to = tokens[endIdx - 1].end;
+      html += escapeHtml(raw.slice(pos, from));
+      const text = escapeHtml(raw.slice(from, to));
+      html += cls ? `<mark class="${cls}">${text}</mark>` : text;
+      pos = to;
+    }
+    html += escapeHtml(raw.slice(pos));
+    return html;
   }
 
   /** Raw text → HTML with <mark> wrappers around matched character spans. */

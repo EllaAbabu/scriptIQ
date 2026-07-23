@@ -79,14 +79,43 @@
           </div>
         </div>
 
-        <div class="compare-grid">
-          <div class="compare-pane">
-            <h3 id="pane-title-a"></h3>
-            <div class="compare-text" id="pane-text-a"></div>
+        <div class="view-toggle" role="tablist">
+          <button class="tab active" data-view="matches" type="button">Shared passages</button>
+          <button class="tab" data-view="diff" type="button">Text diff</button>
+        </div>
+
+        <div id="view-matches">
+          <div class="compare-grid">
+            <div class="compare-pane">
+              <h3 id="pane-title-a"></h3>
+              <div class="compare-text" id="pane-text-a"></div>
+            </div>
+            <div class="compare-pane">
+              <h3 id="pane-title-b"></h3>
+              <div class="compare-text" id="pane-text-b"></div>
+            </div>
           </div>
-          <div class="compare-pane">
-            <h3 id="pane-title-b"></h3>
-            <div class="compare-text" id="pane-text-b"></div>
+        </div>
+
+        <div id="view-diff" hidden>
+          <div class="diff-meta">
+            <p id="diff-summary" class="diff-summary"></p>
+            <div class="legend">
+              <span><mark class="df-del">only in left</mark></span>
+              <span><mark class="df-ins">only in right</mark></span>
+              <span><mark class="df-mod">rewritten</mark></span>
+              <span class="muted">word-level LCS diff</span>
+            </div>
+          </div>
+          <div class="compare-grid">
+            <div class="compare-pane">
+              <h3 id="diff-title-a"></h3>
+              <div class="compare-text" id="diff-text-a"></div>
+            </div>
+            <div class="compare-pane">
+              <h3 id="diff-title-b"></h3>
+              <div class="compare-text" id="diff-text-b"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -100,6 +129,7 @@
   <script src="js/textPipeline.js"></script>
   <script src="js/parser.js"></script>
   <script src="js/similarity.js"></script>
+  <script src="js/diff.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

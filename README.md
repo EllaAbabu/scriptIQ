@@ -25,6 +25,7 @@ css/styles.css      styles
 js/textPipeline.js  normalize → tokenize → stopword filtering
 js/parser.js        PDF (PDF.js), DOCX (JSZip + XML), TXT extraction
 js/similarity.js    TF-IDF + cosine scoring, shared n-gram matching
+js/diff.js          word-level LCS diff (equal / added / removed / rewritten)
 js/app.js           upload UI, document registry, comparison view
 samples/            demo documents
 ```
@@ -36,7 +37,7 @@ diffing, graphing, and storage can be developed independently.
 
 - [x] **Phase 1** — upload + text extraction (PDF/DOCX/TXT) + text pipeline
 - [x] **Phase 2** — TF-IDF + cosine similarity, highlighted matches
-- [ ] **Phase 3** — LCS side-by-side diff view
+- [x] **Phase 3** — LCS side-by-side diff view
 - [ ] **Phase 4** — D3.js similarity network graph for batches
 - [ ] **Phase 5** — semantic (embedding) similarity layer + IndexedDB history
 - [ ] **Phase 6** — edge cases, polish, demo walkthrough
