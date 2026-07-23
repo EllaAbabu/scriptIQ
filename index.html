@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ScriptIQ — Plagiarism Detection</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <!--
+    CDN dependencies (no build step):
+    - PDF.js (legacy UMD build → window.pdfjsLib) for PDF text extraction
+    - JSZip (UMD → window.JSZip) for unzipping .docx containers
+  -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-mark">S</span>
+      <div>
+        <h1>ScriptIQ</h1>
+        <p class="tagline">Free, browser-based plagiarism detection for lecturers</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <!-- Upload zone -->
+    <section class="panel" id="upload-panel">
+      <h2>1 · Upload submissions</h2>
+      <div id="drop-zone" class="drop-zone" tabindex="0" role="button"
+           aria-label="Upload files by clicking or dragging them here">
+        <div class="drop-zone-inner">
+          <div class="drop-icon">⇪</div>
+          <p><strong>Drag &amp; drop</strong> student submissions here</p>
+          <p class="muted">or click to browse — PDF, DOCX, or plain text</p>
+        </div>
+        <input type="file" id="file-input" multiple
+               accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain">
+      </div>
+      <p id="upload-status" class="upload-status" aria-live="polite"></p>
+    </section>
+
+    <!-- Uploaded documents -->
+    <section class="panel" id="documents-panel" hidden>
+      <div class="panel-heading-row">
+        <h2>2 · Extracted text</h2>
+        <button id="clear-all" class="btn btn-ghost" type="button">Clear all</button>
+      </div>
+      <div id="document-list" class="document-grid"></div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>ScriptIQ runs entirely in your browser — submissions never leave this machine.</p>
+  </footer>
+
+  <script src="js/textPipeline.js"></script>
+  <script src="js/parser.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
