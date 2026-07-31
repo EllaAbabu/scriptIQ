@@ -10,13 +10,19 @@
 "use strict";
 
 global.window = global;
-require("../js/textPipeline.js");
-require("../js/similarity.js");
-require("../js/diff.js");
+// The application is an ES module package, while the small algorithm files
+// are browser scripts that attach themselves to `window`. Dynamic imports
+// let the test harness initialise that browser-like global before loading
+// those scripts.
+await import("../js/textPipeline.js");
+await import("../js/similarity.js");
+await import("../js/diff.js");
 
-const fs = require("fs");
-const path = require("path");
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SAMPLES = path.join(__dirname, "..", "samples");
 const read = (name) => fs.readFileSync(path.join(SAMPLES, name), "utf8");
 
